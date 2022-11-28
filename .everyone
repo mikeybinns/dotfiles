@@ -1,0 +1,89 @@
+#!/usr/bin/env bash
+
+# Inspired by https://github.com/kentcdodds/dotfiles/blob/main/.macos 
+# which was modified from https://mths.be/macos
+# Run without downloading:
+# curl -fsSL https://raw.githubusercontent.com/atomicsmash/dotfiles/HEAD/.everyone | bash
+
+if [[ ! $NESTED_EXECUTION = "true" ]]
+then
+    # Close any open System Preferences panes, to prevent them from overriding
+    # settings we’re about to change
+    osascript -e 'tell application "System Preferences" to quit'
+
+    # Ask for the administrator password upfront
+    sudo -v
+
+    # Keep-alive: update existing `sudo` time stamp until `.everyone` has finished
+    while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
+
+    echo "Hello $(whoami)! Let's get you set up.
+
+Sidenote: If you need to install any programs or change any settings after you run this tool, 
+we may be able to update this tool to include those change, so keep a note and then post about
+it on Slack."
+
+    PS3="What's your job role? "
+    select workerType in "I'm a developer" "I'm a designer" "I'm someone else"
+    do
+        WORKER_TYPE=$REPLY;
+        break;
+    done
+fi
+
+
+
+echo "installing homebrew"
+# install homebrew https://brew.sh
+NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
+eval "$(/opt/homebrew/bin/brew shellenv)"
+
+echo "Installing programs using brew --cask"
+# Slack: for internal company communication
+# Around: for internal company video calls
+# Zoom: for a mix of internal and external video calls
+# 1Password: A password manager
+# Clipy: A Clipboard extension app
+# Chrome: Web browser
+# Firefox: Alternate web browser
+# Google Drive: Cloud storage
+# krisp: AI background noise cancelling
+
+brew install --cask slack around zoom 1password clipy google-chrome firefox google-drive krisp
+
+echo "For a list of what's been installed, see https://github.com/atomicsmash/dotfiles/blob/HEAD/.everyone"
+
+# Enable subpixel font rendering on non-Apple LCDs
+# Reference: https://github.com/kevinSuttle/macOS-Defaults/issues/17#issuecomment-266633501
+defaults write NSGlobalDomain AppleFontSmoothing -int 1
+
+# Prevent Mac from turning on when you open the lid or connect it to power
+sudo nvram AutoBoot=%00
+
+# Ask if user wants to set up MacOS a little more like Windows.
+echo "If you're more familiar with Windows than MacOS, running the .macosWindowsHelper file will set up MacOS a little bit more like Windows."
+read -p "Would you like to run this now? (y/n) " -r
+echo    # move to a new line
+if [[ $REPLY =~ ^[Yy]$ ]]
+then
+    NESTED_EXECUTION=true /bin/bash/ -c "$(curl -fsSL https://raw.githubusercontent.com/atomicsmash/dotfiles/HEAD/.macosWindowsHelper | bash)" ||
+    echo "There was an error running the macosWindowsHelper script, please try manually running that script instead." &&
+    echo "The command: curl -fsSL https://raw.githubusercontent.com/atomicsmash/dotfiles/HEAD/.macosWindowsHelper | bash"
+fi
+
+# Run additional scripts based on worker type selected at the beginning.
+if [[ $WORKER_TYPE -eq 1 ]];
+then
+    NESTED_EXECUTION=true /bin/bash/ -c "$(curl -fsSL https://raw.githubusercontent.com/atomicsmash/dotfiles/HEAD/.developers | bash)" ||
+    echo "There was an error running the developers script, please try manually running that script instead." && 
+    echo "The command: curl -fsSL https://raw.githubusercontent.com/atomicsmash/dotfiles/HEAD/.developers | bash" &&
+    exit 1;
+elif [[ $WORKER_TYPE -eq 2 ]];
+then
+    NESTED_EXECUTION=true /bin/bash/ -c "$(curl -fsSL https://raw.githubusercontent.com/atomicsmash/dotfiles/HEAD/.designers | bash)" ||
+    echo "There was an error running the designers script, please try manually running that script instead." && 
+    echo "The command: curl -fsSL https://raw.githubusercontent.com/atomicsmash/dotfiles/HEAD/.designers | bash" &&
+    exit 1;
+fi

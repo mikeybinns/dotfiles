@@ -1,0 +1,290 @@
+#!/usr/bin/env bash
+
+# Inspired by https://github.com/kentcdodds/dotfiles/blob/main/.macos 
+# which was modified from https://mths.be/macos
+# Run without downloading:
+# curl -fsSL https://raw.githubusercontent.com/atomicsmash/dotfiles/HEAD/.developers | bash
+
+if [[ ! $NESTED_EXECUTION = "true" ]]
+then
+    # Close any open System Preferences panes, to prevent them from overriding
+    # settings we’re about to change
+    osascript -e 'tell application "System Preferences" to quit'
+
+    # Ask for the administrator password upfront
+    sudo -v
+
+    # Keep-alive: update existing `sudo` time stamp until `.everyone` has finished
+    while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
+
+    echo "Hello $(whoami)! Let's get you set up.
+
+Sidenote: If you need to install any programs or change any settings after you run this tool, 
+we may be able to update this tool to include those change, so keep a note and then post about
+it on Slack."
+
+  read -p "Have you run the .everyone script already? (y/n) " -r
+  echo    # move to a new line
+  if [[ ! $REPLY =~ ^[Yy]$ ]]
+  then
+      NESTED_EXECUTION=true /bin/bash/ -c "$(curl -fsSL https://raw.githubusercontent.com/atomicsmash/dotfiles/HEAD/.everyone | bash)" ||
+      echo "There was an error running the everyone script, please try manually running that script first." && 
+      exit 1;
+  fi
+fi
+
+xcode-select --install
+
+echo "Create a folder for your project work (~/Websites)"
+mkdir -p "${HOME}/Websites"
+
+echo "Installing developer programs using brew"
+# nvm: manage your node and npm versions automatically
+# composer: php package manager
+# php: php language
+brew install nvm composer php
+
+echo "node --version: $(node --version)"
+echo "npm --version: $(npm --version)"
+
+echo "Installing developer programs using brew --cask"
+# dbngin: A Clipboard extension app
+# visual-studio-code: VS Code, our code editor of choice
+# php-mon: PHP monitor that works very well with Valet
+
+brew tap nicoverbruggen/homebrew-cask
+brew install --cask dbngin visual-studio-code phpmon
+
+echo "For a list of what's been installed, see https://github.com/atomicsmash/dotfiles/blob/HEAD/.developers"
+
+# Install our local WP hosting platform
+echo "Install Laravel Valet"
+composer global require laravel/valet
+valet install
+
+# Install our deployment tool
+echo "Install capistrano"
+gem install capistrano
+gem install capistrano-composer
+
+echo "Generate an SSH key for this machine"
+while true;
+do
+    echo -n "Please enter your work email address: "
+    read;
+    YOUR_EMAIL=$REPLY;
+    read -p "You entered \"${YOUR_EMAIL}\". Is that correct? (y/n) " -n 1 -r;
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]
+    then
+        break;
+    fi
+done
+ssh-keygen -f ~/.ssh/id_rsa -t rsa -b 4096 -C "${YOUR_EMAIL}"
+echo "Host * (asterisk for all hosts or add specific host)
+  IdentityFile ~/.ssh/id_rsa
+  AddKeysToAgent yes
+  UseKeychain yes" >> ~/.ssh/config
+ssh-add -K ~/.ssh/id_rsa
+echo "run 'pbcopy < ~/.ssh/id_rsa.pub' to copy the public key into your clipboard, then paste it into where it's needed."
+
+echo "# Add composer to PATH
+export PATH=\"$PATH:$HOME/.composer/vendor/bin\"
+
+# Make DBNgin mysql accessible from the terminal
+export PATH=/Users/Shared/DBngin/mysql/5.7.23/bin:$PATH
+
+# Modify shell history to avoid duplicate commands
+setopt HIST_EXPIRE_DUPS_FIRST
+setopt HIST_IGNORE_DUPS
+setopt HIST_IGNORE_ALL_DUPS
+setopt HIST_IGNORE_SPACE
+setopt HIST_FIND_NO_DUPS
+setopt HIST_SAVE_NO_DUPS
+
+# Add ability to search history by typing and then using arrow keys to find matching commands
+bindkey \"^[[A\" history-beginning-search-backward
+bindkey \"^[[B\" history-beginning-search-forward
+
+# Automatically switch (and install) node versions using nvm
+autoload -U add-zsh-hook
+load-nvmrc() {
+  [[ -a .nvmrc ]] || return
+  local node_version="$(nvm version)"
+  local nvmrc_path="$(nvm_find_nvmrc)"
+
+  if [ -n "$nvmrc_path" ]; then
+    local nvmrc_node_version=$(nvm version "$(cat "${nvmrc_path}")")
+
+    if [ "$nvmrc_node_version" = "N/A" ]; then
+      nvm install
+    elif [ "$nvmrc_node_version" != "$node_version" ]; then
+      nvm use
+    fi
+  elif [ "$node_version" != "$(nvm version default)" ]; then
+    echo "Reverting to nvm default version"
+    nvm use default
+  fi
+}
+add-zsh-hook chpwd load-nvmrc
+load-nvmrc
+
+# Automatically switch PHP versions using Valet
+autoload -U add-zsh-hook
+load-valetphprc() {
+  [[ -a .valetphprc ]] || return
+  local php_version=$(php -r "echo PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION;")
+  local valetphprc_path=".valetphprc"
+
+  if [ -f "$valetphprc_path" ]; then
+    local valetphprc_version="$(cat "${valetphprc_path}")"
+
+    if [ "php@$php_version" != "$valetphprc_version" ]; then
+      valet use
+    fi
+  fi
+}
+add-zsh-hook chpwd load-valetphprc
+load-valetphprc
+" >> ~/.zshrc
+
+# Disable automatic capitalization as it’s annoying when typing code
+defaults write NSGlobalDomain NSAutomaticCapitalizationEnabled -bool false
+
+# Disable smart dashes as they’re annoying when typing code
+defaults write NSGlobalDomain NSAutomaticDashSubstitutionEnabled -bool false
+
+# Disable automatic period substitution as it’s annoying when typing code
+defaults write NSGlobalDomain NSAutomaticPeriodSubstitutionEnabled -bool false
+
+# Disable smart quotes as they’re annoying when typing code
+defaults write NSGlobalDomain NSAutomaticQuoteSubstitutionEnabled -bool false
+
+# Finder: show hidden files by default
+defaults write com.apple.finder AppleShowAllFiles -bool true
+
+# Finder: show all filename extensions
+defaults write NSGlobalDomain AppleShowAllExtensions -bool true
+
+# Press Tab to highlight each item on a web page
+defaults write com.apple.Safari WebKitTabToLinksPreferenceKey -bool true
+defaults write com.apple.Safari com.apple.Safari.ContentPageGroupIdentifier.WebKit2TabsToLinks -bool true
+
+# Show the full URL in the address bar (note: this still hides the scheme)
+defaults write com.apple.Safari ShowFullURLInSmartSearchField -bool true
+
+# Set Safari’s home page to `about:blank` for faster loading
+defaults write com.apple.Safari HomePage -string "about:blank"
+
+# Enable the Develop menu and the Web Inspector in Safari
+defaults write com.apple.Safari IncludeDevelopMenu -bool true
+defaults write com.apple.Safari WebKitDeveloperExtrasEnabledPreferenceKey -bool true
+defaults write com.apple.Safari com.apple.Safari.ContentPageGroupIdentifier.WebKit2DeveloperExtrasEnabled -bool true
+
+# Add a context menu item for showing the Web Inspector in web views
+defaults write NSGlobalDomain WebKitDeveloperExtras -bool true
+
+# Set up VS Code for the first time
+export PATH="$PATH:/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
+code --install-extension ms-vsliveshare.vsliveshare
+code --install-extension vincaslt.highlight-matching-tag
+code --install-extension wix.vscode-import-cost
+code --install-extension editorconfig.editorconfig
+code --install-extension dbaeumer.vscode-eslint
+code --install-extension esbenp.prettier-vscode
+code --install-extension Gruntfuggly.todo-tree
+code --install-extension stylelint.vscode-stylelint
+code --install-extension bmewburn.vscode-intelephense-client
+
+touch "$HOME/Library/Application Support/Code/User/settings.json"
+
+echo '{
+  "cSpell.language": "en-GB",
+  "editor.bracketPairColorization.enabled": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.detectIndentation": true,
+  "editor.formatOnSave": true,
+  "editor.stickyScroll.enabled": true,
+  "emmet.triggerExpansionOnTab": true,
+  "intelephense.format.enable": false,
+  "intelephense.stubs": [
+    "apache",
+    "bcmath",
+    "bz2",
+    "calendar",
+    "com_dotnet",
+    "Core",
+    "ctype",
+    "curl",
+    "date",
+    "dba",
+    "dom",
+    "enchant",
+    "exif",
+    "FFI",
+    "fileinfo",
+    "filter",
+    "fpm",
+    "ftp",
+    "gd",
+    "gettext",
+    "gmp",
+    "hash",
+    "iconv",
+    "imap",
+    "intl",
+    "json",
+    "ldap",
+    "libxml",
+    "mbstring",
+    "meta",
+    "mysqli",
+    "oci8",
+    "odbc",
+    "openssl",
+    "pcntl",
+    "pcre",
+    "PDO",
+    "pdo_ibm",
+    "pdo_mysql",
+    "pdo_pgsql",
+    "pdo_sqlite",
+    "pgsql",
+    "Phar",
+    "posix",
+    "pspell",
+    "readline",
+    "Reflection",
+    "session",
+    "shmop",
+    "SimpleXML",
+    "snmp",
+    "soap",
+    "sockets",
+    "sodium",
+    "SPL",
+    "sqlite3",
+    "standard",
+    "superglobals",
+    "sysvmsg",
+    "sysvsem",
+    "sysvshm",
+    "tidy",
+    "tokenizer",
+    "xml",
+    "xmlreader",
+    "xmlrpc",
+    "xmlwriter",
+    "xsl",
+    "Zend OPcache",
+    "zip",
+    "zlib",
+    "wordpress"
+  ],
+  "git.autofetch": true,
+  "git.confirmSync": false,
+  "git.enableSmartCommit": true,
+	"todo-tree.general.tags": ["TODO", "ASTODO", "NOTE", "ASNOTE", "@todo"],
+	"todo-tree.filtering.excludeGlobs": ["**/public/wp-content/plugins/**"],
+	"todo-tree.regex.regex": "(//|#|<!--|;|\\*|/\\*|^|^[ \\t]*(-|\\d+.))\\s*($TAGS)"
+}' > "$HOME/Library/Application Support/Code/User/settings.json"

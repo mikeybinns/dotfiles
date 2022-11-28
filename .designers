@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+
+# Inspired by https://github.com/kentcdodds/dotfiles/blob/main/.macos 
+# which was modified from https://mths.be/macos
+# Run without downloading:
+# curl -fsSL https://raw.githubusercontent.com/atomicsmash/dotfiles/HEAD/.designers | bash
+
+if [[ ! $NESTED_EXECUTION = "true" ]]
+then
+    # Close any open System Preferences panes, to prevent them from overriding
+    # settings we’re about to change
+    osascript -e 'tell application "System Preferences" to quit'
+
+    # Ask for the administrator password upfront
+    sudo -v
+
+    # Keep-alive: update existing `sudo` time stamp until `.everyone` has finished
+    while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
+
+    echo "Hello $(whoami)! Let's get you set up.
+
+Sidenote: If you need to install any programs or change any settings after you run this tool, 
+we may be able to update this tool to include those change, so keep a note and then post about
+it on Slack."
+
+  read -p "Have you run the .everyone script already? (y/n) " -r
+  echo    # move to a new line
+  if [[ ! $REPLY =~ ^[Yy]$ ]]
+  then
+      NESTED_EXECUTION=true /bin/bash/ -c "$(curl -fsSL https://raw.githubusercontent.com/atomicsmash/dotfiles/HEAD/.everyone | bash)" ||
+      echo "There was an error running the everyone script, please try manually running that script first." && 
+      exit 1;
+  fi
+fi
+
+
+echo "Installing designer programs using brew --cask"
+# figma: Our main design tool
+# adobe-creative-cloud: might be required for some projects
+# sketch: used for legacy projects
+# cyberduck: Used to access legacy file archive
+# microsoft-word: used to read some client briefs
+
+brew install --cask figma adobe-creative-cloud sketch cyberduck microsoft-word
