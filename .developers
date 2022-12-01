@@ -3,7 +3,7 @@
 # Inspired by https://github.com/kentcdodds/dotfiles/blob/main/.macos 
 # which was modified from https://mths.be/macos
 # Run without downloading:
-# curl -fsSL https://raw.githubusercontent.com/atomicsmash/dotfiles/HEAD/.developers | bash
+# curl -fsSL https://raw.githubusercontent.com/mikeybinns/dotfiles/HEAD/.developers | bash
 
 if [[ ! $NESTED_EXECUTION = "true" ]]
 then
@@ -27,7 +27,7 @@ it on Slack."
   echo    # move to a new line
   if [[ ! $REPLY =~ ^[Yy]$ ]]
   then
-      NESTED_EXECUTION=true /bin/bash/ -c "$(curl -fsSL https://raw.githubusercontent.com/atomicsmash/dotfiles/HEAD/.everyone | bash)" ||
+      NESTED_EXECUTION=true /bin/bash/ -c "$(curl -fsSL https://raw.githubusercontent.com/mikeybinns/dotfiles/HEAD/.everyone | bash)" ||
       echo "There was an error running the everyone script, please try manually running that script first." && 
       exit 1;
   fi
@@ -55,7 +55,7 @@ echo "Installing developer programs using brew --cask"
 brew tap nicoverbruggen/homebrew-cask
 brew install --cask dbngin visual-studio-code phpmon
 
-echo "For a list of what's been installed, see https://github.com/atomicsmash/dotfiles/blob/HEAD/.developers"
+echo "For a list of what's been installed, see https://github.com/mikeybinns/dotfiles/blob/HEAD/.developers"
 
 # Install our local WP hosting platform
 echo "Install Laravel Valet"

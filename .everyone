@@ -3,7 +3,7 @@
 # Inspired by https://github.com/kentcdodds/dotfiles/blob/main/.macos 
 # which was modified from https://mths.be/macos
 # Run without downloading:
-# curl -fsSL https://raw.githubusercontent.com/atomicsmash/dotfiles/HEAD/.everyone | bash
+# curl -fsSL https://raw.githubusercontent.com/mikeybinns/dotfiles/HEAD/.everyone | bash
 
 if [[ ! $NESTED_EXECUTION = "true" ]]
 then
@@ -53,7 +53,7 @@ echo "Installing programs using brew --cask"
 
 brew install --cask slack around zoom 1password clipy google-chrome firefox google-drive krisp
 
-echo "For a list of what's been installed, see https://github.com/atomicsmash/dotfiles/blob/HEAD/.everyone"
+echo "For a list of what's been installed, see https://github.com/mikeybinns/dotfiles/blob/HEAD/.everyone"
 
 # Enable subpixel font rendering on non-Apple LCDs
 # Reference: https://github.com/kevinSuttle/macOS-Defaults/issues/17#issuecomment-266633501
@@ -68,22 +68,22 @@ read -p "Would you like to run this now? (y/n) " -r
 echo    # move to a new line
 if [[ $REPLY =~ ^[Yy]$ ]]
 then
-    NESTED_EXECUTION=true /bin/bash/ -c "$(curl -fsSL https://raw.githubusercontent.com/atomicsmash/dotfiles/HEAD/.macosWindowsHelper | bash)" ||
+    NESTED_EXECUTION=true /bin/bash/ -c "$(curl -fsSL https://raw.githubusercontent.com/mikeybinns/dotfiles/HEAD/.macosWindowsHelper | bash)" ||
     echo "There was an error running the macosWindowsHelper script, please try manually running that script instead." &&
-    echo "The command: curl -fsSL https://raw.githubusercontent.com/atomicsmash/dotfiles/HEAD/.macosWindowsHelper | bash"
+    echo "The command: curl -fsSL https://raw.githubusercontent.com/mikeybinns/dotfiles/HEAD/.macosWindowsHelper | bash"
 fi
 
 # Run additional scripts based on worker type selected at the beginning.
 if [[ $WORKER_TYPE -eq 1 ]];
 then
-    NESTED_EXECUTION=true /bin/bash/ -c "$(curl -fsSL https://raw.githubusercontent.com/atomicsmash/dotfiles/HEAD/.developers | bash)" ||
+    NESTED_EXECUTION=true /bin/bash/ -c "$(curl -fsSL https://raw.githubusercontent.com/mikeybinns/dotfiles/HEAD/.developers | bash)" ||
     echo "There was an error running the developers script, please try manually running that script instead." && 
-    echo "The command: curl -fsSL https://raw.githubusercontent.com/atomicsmash/dotfiles/HEAD/.developers | bash" &&
+    echo "The command: curl -fsSL https://raw.githubusercontent.com/mikeybinns/dotfiles/HEAD/.developers | bash" &&
     exit 1;
 elif [[ $WORKER_TYPE -eq 2 ]];
 then
-    NESTED_EXECUTION=true /bin/bash/ -c "$(curl -fsSL https://raw.githubusercontent.com/atomicsmash/dotfiles/HEAD/.designers | bash)" ||
+    NESTED_EXECUTION=true /bin/bash/ -c "$(curl -fsSL https://raw.githubusercontent.com/mikeybinns/dotfiles/HEAD/.designers | bash)" ||
     echo "There was an error running the designers script, please try manually running that script instead." && 
-    echo "The command: curl -fsSL https://raw.githubusercontent.com/atomicsmash/dotfiles/HEAD/.designers | bash" &&
+    echo "The command: curl -fsSL https://raw.githubusercontent.com/mikeybinns/dotfiles/HEAD/.designers | bash" &&
     exit 1;
 fi
