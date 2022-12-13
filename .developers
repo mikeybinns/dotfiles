@@ -42,10 +42,14 @@ echo "Installing developer programs using brew"
 # nvm: manage your node and npm versions automatically
 # composer: php package manager
 # php: php language
-brew install nvm composer php
+# asimov: tool to exclude dev files from time machine backups (e.g. node_modules)
+brew install nvm composer php asimov
 
 echo "node --version: $(node --version)"
 echo "npm --version: $(npm --version)"
+
+# Start Asimov service (runs daily)
+sudo brew services start asimov
 
 echo "Installing developer programs using brew --cask"
 # dbngin: A Clipboard extension app
